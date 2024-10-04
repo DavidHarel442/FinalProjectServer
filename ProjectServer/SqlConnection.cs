@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class SqlConnection
+    public class SqlConnection
     {// this classes object is to communicate with the database. to connect between the database and the project. protection againts SQL injection exists
 
         /// <summary>

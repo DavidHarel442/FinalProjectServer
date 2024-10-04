@@ -39,8 +39,6 @@ namespace ProjectServer
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error decrypting message: {ex.Message}");
-                        // Handle unencrypted messages (e.g., initial connection messages)
-                        ProcessUnencryptedMessage(potentialMessage, messages);
                     }
                 }
             }
@@ -64,23 +62,7 @@ namespace ProjectServer
                 Console.WriteLine($"Invalid decrypted message format: {decryptedMessage}");
             }
         }
-        private void ProcessUnencryptedMessage(string message, List<TcpCommunicationProtocol> messages)
-        {
-            string[] parts = message.Split('\n');
-            if (parts.Length >= 2)
-            {
-                TcpCommunicationProtocol protocol = new TcpCommunicationProtocol
-                {
-                    Command = parts[0],
-                    Arguments = string.Join("\n", parts.Skip(1))
-                };
-                messages.Add(protocol);
-            }
-            else
-            {
-                Console.WriteLine($"Invalid unencrypted message format: {message}");
-            }
-        }
+        
         public void SetClientPublicKey(string publicKey)
         {
             encryptionManager.SetClientPublicKey(publicKey);

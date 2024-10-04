@@ -51,6 +51,7 @@ namespace ProjectServer
         /// this property is an object that will handle all messages
         /// </summary>
         private MessageHandler messageHandler;
+        
         /// <summary>
         /// When the client gets connected to the server the server will create an instance of the ClientSession and pass the TcpClient
         /// </summary>
@@ -85,7 +86,7 @@ namespace ProjectServer
                 {
                     message = communicationProtocol.ToProtocol(command, arguments);
                 }
-
+                Console.WriteLine($"Sent: Command={command},Arguments={arguments}");
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(message);
                 ns.Write(bytesToSend, 0, bytesToSend.Length);
                 ns.Flush();

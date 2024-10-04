@@ -8,10 +8,18 @@ namespace ProjectServer
 {
     public class MessageHandler
     {
+        /// <summary>
+        /// property to use for checking login and register
+        /// </summary>
+        private LoginAndRegister loginAndRegister;
+        /// <summary>
+        /// property to help managing the messages
+        /// </summary>
         private TcpClientSession clientSession;
         public MessageHandler(TcpClientSession session)
         {
             clientSession = session;
+            loginAndRegister = new LoginAndRegister(clientSession.communicationProtocol,clientSession);
         }
         /// <summary>
         /// handles message. 
@@ -22,8 +30,13 @@ namespace ProjectServer
             Console.WriteLine($"Handling message: Command={message.Command}, Username={message.Username}, Arguments={message.Arguments}");
             switch (message.Command)
             {
-                case "...":
-                    
+                case "Login":
+                    string username = message.Arguments.Split('\t')[0];
+                    string password = message.Arguments.Split('\t')[1];
+                    loginAndRegister.CheckLogin(username, password);
+                    break;
+                case "Register":
+                    loginAndRegister.Register(message.Arguments);
                     break;
                 default:
                     break;
@@ -38,10 +51,10 @@ namespace ProjectServer
         {
             try
             {
-                TcpCommunicationProtocol usernameMessage = clientSession.communicationProtocol.FromProtocol(message)[0];
-                if (usernameMessage.Command == "USERNAME")
+                string command = message.Split('\n')[0];
+                if (command == "USERNAME")
                 {
-                    string encodedUsername = usernameMessage.Arguments;
+                    string encodedUsername = message.Split('\n')[1].TrimEnd('\r');
                     
                         string decodedUsername = Encoding.UTF8.GetString(Convert.FromBase64String(encodedUsername));
                         Console.WriteLine($"Received username: {decodedUsername}");
@@ -67,6 +80,10 @@ namespace ProjectServer
                 Console.WriteLine($"Error handling username message: {ex.Message}");
                 clientSession.SendMessage("ERROR", "InvalidUsernameMessage");
             }
+        }
+        public void Login(string username,string password)
+        {
+
         }
     }
 }

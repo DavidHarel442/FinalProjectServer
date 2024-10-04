@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace ProjectServer
 {
     public class AESEncryption
-    {
+    {//taken from claude
         private byte[] Key;
         private const int KeySize = 256;
         private const int BlockSize = 128;

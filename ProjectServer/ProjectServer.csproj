@@ -61,6 +61,7 @@
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
     <Compile Include="EncryptionManager.cs" />
+    <Compile Include="LoginAndRegister.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="SqlConnection.cs" />
     <Compile Include="TcpClientSession.cs" />
