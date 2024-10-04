@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class EndPoint
+    public class EndPoint
     {
         // this class is the class for each client that saves their requests
 

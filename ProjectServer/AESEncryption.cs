@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class AESEncryption
+    public class AESEncryption
     {
         private byte[] Key;
         private const int KeySize = 256;

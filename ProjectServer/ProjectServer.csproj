@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
     <Compile Include="EncryptionManager.cs" />
+    <Compile Include="MessageHandler.cs" />
     <Compile Include="TcpClientSession.cs" />
     <Compile Include="TcpCommunicationProtocol.cs" />
     <Compile Include="DosProtection.cs" />

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class TcpServer
+    public class TcpServer
     {
         // Store list of all clients connecting to the server
         // the list is static so all memebers of the chat will be able to obtain list

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class DosProtection
+    public class DosProtection
     {
         // this class's goal is to protect the server from a Dos Attack. he is saving a list of all the clients. a list of type "EndPoint"
 

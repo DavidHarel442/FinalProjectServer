@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class ServerManager
+    public class ServerManager
     {//the class that runs when you start the run. By pressing 'Start'. this class is incharge of the ServerManager. it basically managers the servers
 
         public static TcpServer tcpServer;

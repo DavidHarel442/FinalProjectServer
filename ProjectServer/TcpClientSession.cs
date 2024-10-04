@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
-    internal class TcpClientSession
+    public class TcpClientSession
     {// this class is in charge of managing each client's session
 
         
@@ -39,9 +39,18 @@ namespace ProjectServer
         /// getters and setters for the clientIP
         /// </summary>
         public string GetClientIP { get => clientIP; set => clientIP = value; }
-        private bool isInitialConnectionComplete = false;
+        /// <summary>
+        /// first boolean to check if initial connection is finished, (communication is encrypted with keys exchanged)
+        /// </summary>
+        public bool isInitialConnectionComplete = false;
+        /// <summary>
+        /// boolean to check if keys were exchanged succesfully and now waiting for username
+        /// </summary>
         private bool isAwaitingUsername = false;
-
+        /// <summary>
+        /// this property is an object that will handle all messages
+        /// </summary>
+        private MessageHandler messageHandler;
         /// <summary>
         /// When the client gets connected to the server the server will create an instance of the ClientSession and pass the TcpClient
         /// </summary>
@@ -50,6 +59,7 @@ namespace ProjectServer
         {
             _client = client;
             this.communicationProtocol = communicationProtocol;
+            messageHandler = new MessageHandler(this);
             GetClientIP = client.Client.RemoteEndPoint.ToString();
             data = new byte[_client.ReceiveBufferSize];
 
@@ -73,7 +83,7 @@ namespace ProjectServer
                 }
                 else
                 {
-                    message = communicationProtocol.ToProtocol(command, _ClientNick, arguments);
+                    message = communicationProtocol.ToProtocol(command, arguments);
                 }
 
                 byte[] bytesToSend = Encoding.UTF8.GetBytes(message);
@@ -109,8 +119,6 @@ namespace ProjectServer
                 }
 
                 string messageReceived = Encoding.UTF8.GetString(data, 0, bytesRead);
-                Console.WriteLine($"Received raw message: {messageReceived}");
-
                 if (!isInitialConnectionComplete)
                 {
                     if (isAwaitingUsername)
@@ -139,7 +147,26 @@ namespace ProjectServer
                 ServerManager.tcpServer.RemoveClientSession(GetClientIP);
             }
         }
-
+        /// <summary>
+        /// this function is responsible for calling the function that will handle the acceptence of messages
+        /// </summary>
+        /// <param name="message"></param>
+        private void HandleMessage(TcpCommunicationProtocol message)
+        {
+            messageHandler.HandleMessage(message);
+        }
+        /// <summary>
+        /// this function is responsible for calling the function that will send username
+        /// </summary>
+        /// <param name="message"></param>
+        private void HandleUsernameMessage(string message)
+        {
+            messageHandler.HandleUsernameMessage(message);
+        }
+        /// <summary>
+        /// handles the exchange of keys
+        /// </summary>
+        /// <param name="initialMessage"></param>
         private void HandleInitialConnection(string initialMessage)
         {
             string[] parts = initialMessage.Split('\n');
@@ -157,57 +184,7 @@ namespace ProjectServer
                 ServerManager.tcpServer.RemoveClientSession(GetClientIP);
             }
         }
-        private void HandleUsernameMessage(string encryptedMessage)
-        {
-            try
-            {
-                encryptedMessage = encryptedMessage.TrimEnd('\r');
 
-                string decryptedMessage = communicationProtocol.DecryptMessage(encryptedMessage);
-                string[] parts = decryptedMessage.Split('\n');
-                if (parts.Length >= 2 && parts[0] == "USERNAME")
-                {
-                    string encodedUsername = parts[1];
-                    string decodedUsername = Encoding.UTF8.GetString(Convert.FromBase64String(encodedUsername));
-
-                    if (ServerManager.tcpServer.SomeoneAlreadyConnected(decodedUsername))
-                    {
-                        SendMessage("ERROR", "SomeoneAlreadyConnected");
-                    }
-                    else
-                    {
-                        _ClientNick = decodedUsername;
-                        isInitialConnectionComplete = true;
-                        isAwaitingUsername = false;
-                        SendMessage("OK", "UsernameAccepted");
-                    }
-                }
-                else
-                {
-                    SendMessage("ERROR", "InvalidUsernameMessage");
-                }
-            }
-            catch (Exception)
-            {
-                SendMessage("ERROR", "InvalidUsernameMessage");
-            }
-        }
-
-        /// <summary>
-        /// handles message. 
-        /// </summary>
-        /// <param name="protocol"></param>
-        private void HandleMessage(TcpCommunicationProtocol protocol)
-        {
-            Console.WriteLine($"Handling message: Command={protocol.Command}, Username={protocol.Username}, Arguments={protocol.Arguments}");
-            switch (protocol.Command)
-            {
-                case "WhatsUp":
-                    break;
-                default:
-                    break;
-            }
-        }
 
 
         /// <summary>

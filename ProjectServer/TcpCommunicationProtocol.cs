@@ -7,7 +7,7 @@ using System.Web;
 
 namespace ProjectServer
 {
-    internal class TcpCommunicationProtocol
+    public class TcpCommunicationProtocol
     {
         private EncryptionManager encryptionManager;
 
@@ -16,9 +16,9 @@ namespace ProjectServer
             encryptionManager = new EncryptionManager();
         }
 
-        public string ToProtocol(string command, string username, string arguments)
+        public string ToProtocol(string command, string arguments)
         {
-            string message = $"{command}\n{username}\n{arguments}";
+            string message = $"{command}\n{arguments}";
             return encryptionManager.EncryptMessage(message) + "\r";
         }
 
