@@ -66,7 +66,10 @@ namespace ProjectServer
 
             _client.GetStream().BeginRead(data, 0, System.Convert.ToInt32(_client.ReceiveBufferSize), ReceiveMessage, null);
         }
-
+        /// <summary>
+        /// this funcion is used when the client send a message. it converts the string into bytes and sends it using the Tcp Protocol
+        /// </summary>
+        /// <param name="message"></param>
         public void SendMessage(string command, string arguments)
         {
             try
@@ -188,19 +191,5 @@ namespace ProjectServer
 
 
 
-        /// <summary>
-        /// send message to all the clients that are stored in the allclients hashtable
-        /// </summary>
-        /// <param name="message"></param>
-        //public static void Broadcast(string message)
-        //{
-        //    foreach (DictionaryEntry c in ServerManager.tcpServer.Sessions)
-        //    {
-
-        //        ((TcpClientSession)(c.Value)).SendMessage(message);
-
-        //    }
-
-        //}
     }
 }

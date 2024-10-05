@@ -19,10 +19,10 @@ namespace ProjectServer
         /// </summary>
         private static readonly Random Random = new Random();
         /// <summary>
-        /// this property 'forgotPasswordToken' is a token generated with 6 digits.
+        /// this property 'token' is a token generated with 6 digits.
         /// and the user recieves the token to his gmail and he has to put it in and then after verification he can change his password
         /// </summary>
-        public string forgotPasswordToken;
+        public string token;
         /// <summary>
         /// this property 'c' is an object which with it you communicate with the Sql Database
         /// </summary>
@@ -32,6 +32,10 @@ namespace ProjectServer
         /// </summary>
         public TcpCommunicationProtocol communicationProtocol = null;
 
+
+
+
+
         public TcpClientSession clientSession = null;
         /// <summary>
         /// constructor. receives a communication protocol object and equals it to the property that is null
@@ -40,7 +44,6 @@ namespace ProjectServer
         public LoginAndRegister(TcpCommunicationProtocol communicationProtocol, TcpClientSession clientSession)
         {
             this.communicationProtocol = communicationProtocol;
-            this.forgotPasswordToken = GenerateToken(6);
             this.clientSession = clientSession;
         }
         /// <summary>
@@ -62,7 +65,22 @@ namespace ProjectServer
                 clientSession.SendMessage("Registered", info[2]);
             }
         }
-
+        /// <summary>
+        /// this function checks if the client can register in the system , it checks if the username he tried to put in can be used
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        public bool CanRegister(string username)
+        {
+            if (c.IsExist(username))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
         /// <summary>
         /// this function checks if the recieved name and password exist in the database. and if it does it sends an approval and the first name of the user
         /// </summary>
@@ -91,12 +109,22 @@ namespace ProjectServer
         /// sends the mail to the user who asked to change the password. it sends him code which he needs to put to validate that it is in fact him
         /// </summary>
         /// <param name="mailTo"></param>
-        ////////////////public void SendForgotPassword(string mailTo)
-        ////////////////{
-        ////////////////    ForgotPassword obj = new ForgotPassword();
-        ////////////////    obj.SendForgotPasswordMail(mailTo, forgotPasswordToken);
-        ////////////////}
-
+        public void SendForgotPassword(string mailTo)
+        {
+            this.token = GenerateToken(6);
+            MailSender obj = new MailSender();
+            obj.SendForgotPasswordMail(mailTo, token);
+        }
+        /// <summary>
+        /// sends the mail to the user who asked to change the login/register. it sends him code which he needs to put to validate that it is in fact him
+        /// </summary>
+        /// <param name="mailTo"></param>
+        public void SendSecondAuthentication(string mailTo)
+        {
+            this.token = GenerateToken(6);
+            MailSender obj = new MailSender();
+            obj.SendTwoStepAuthenticationMail(mailTo, token);
+        }
         /// <summary>
         /// this function generates a unique token that will be used for forgot password
         /// </summary>
