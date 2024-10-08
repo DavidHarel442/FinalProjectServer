@@ -22,9 +22,9 @@ namespace ProjectServer
             return encryptionManager.EncryptMessage(message) + "\r";
         }
 
-        public List<TcpCommunicationProtocol> FromProtocol(string text)
+        public List<TcpProtocolMessage> FromProtocol(string text)
         {
-            List<TcpCommunicationProtocol> messages = new List<TcpCommunicationProtocol>();
+            List<TcpProtocolMessage> messages = new List<TcpProtocolMessage>();
             string[] potentialMessages = text.Split(new[] { '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string potentialMessage in potentialMessages)
@@ -44,18 +44,18 @@ namespace ProjectServer
             }
             return messages;
         }
-        private void ProcessDecryptedMessage(string decryptedMessage, List<TcpCommunicationProtocol> messages)
+        private void ProcessDecryptedMessage(string decryptedMessage, List<TcpProtocolMessage> messages)
         {
             string[] parts = decryptedMessage.Split('\n');
             if (parts.Length >= 3)
             {
-                TcpCommunicationProtocol protocol = new TcpCommunicationProtocol
+                TcpProtocolMessage message = new TcpProtocolMessage
                 {
                     Command = parts[0],
                     Username = parts[1],
                     Arguments = string.Join("\n", parts.Skip(2))
                 };
-                messages.Add(protocol);
+                messages.Add(message);
             }
             else
             {
@@ -78,8 +78,6 @@ namespace ProjectServer
             return encryptionManager.DecryptMessage(encryptedMessage.TrimEnd('\r'));
         }
 
-        public string Command { get; set; }
-        public string Username { get; set; }
-        public string Arguments { get; set; }
+        
     }
 }

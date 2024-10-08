@@ -26,7 +26,7 @@ namespace ProjectServer
         /// handles message. 
         /// </summary>
         /// <param name="message"></param>
-        public void HandleMessage(TcpCommunicationProtocol message)
+        public void HandleMessage(TcpProtocolMessage message)
         {
             Console.WriteLine($"Handling message: Command={message.Command}, Username={message.Username}, Arguments={message.Arguments}");
             switch (message.Command)
@@ -62,7 +62,7 @@ namespace ProjectServer
         /// <summary>
         /// this function will send code to mail for two step authentication and captcha for triple one. and verifies them 
         /// </summary>
-        private void HandleAuthentication(bool shouldVerify, TcpCommunicationProtocol message)
+        private void HandleAuthentication(bool shouldVerify, TcpProtocolMessage message)
         {
             if (!shouldVerify)
             {
@@ -118,7 +118,7 @@ namespace ProjectServer
         /// handle the whole proccess message wise of the forgot password proccess
         /// </summary>
         /// <param name="message"></param>
-        private void HandleForgotPassword(TcpCommunicationProtocol message)
+        private void HandleForgotPassword(TcpProtocolMessage message)
         {
             switch (message.Command)
             {

@@ -65,6 +65,7 @@
     <Compile Include="EncryptionManager.cs" />
     <Compile Include="MailSender.cs" />
     <Compile Include="LoginAndRegister.cs" />
+    <Compile Include="TcpProtocolMessage.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="SqlConnection.cs" />
     <Compile Include="TcpClientSession.cs" />

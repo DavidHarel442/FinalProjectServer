@@ -136,8 +136,8 @@ namespace ProjectServer
                 }
                 else
                 {
-                    List<TcpCommunicationProtocol> messages = communicationProtocol.FromProtocol(messageReceived);
-                    foreach (TcpCommunicationProtocol message in messages)
+                    List<TcpProtocolMessage> messages = communicationProtocol.FromProtocol(messageReceived);
+                    foreach (TcpProtocolMessage message in messages)
                     {
                         HandleMessage(message);
                     }
@@ -155,7 +155,7 @@ namespace ProjectServer
         /// this function is responsible for calling the function that will handle the acceptence of messages
         /// </summary>
         /// <param name="message"></param>
-        private void HandleMessage(TcpCommunicationProtocol message)
+        private void HandleMessage(TcpProtocolMessage message)
         {
             messageHandler.HandleMessage(message);
         }
