@@ -10,22 +10,40 @@ namespace ProjectServer
 {
     public class AESEncryption
     {//taken from claude
+     //this class is responsible for the encryption of the data using symetric encryption AES
+        /// <summary>
+        /// The encryption key.
+        /// </summary>
         private byte[] Key;
+        /// <summary>
+        /// The size of the encryption key in bits.
+        /// </summary>
         private const int KeySize = 256;
+        /// <summary>
+        /// The block size for AES encryption in bits.
+        /// </summary>
         private const int BlockSize = 128;
-
+        /// <summary>
+        /// Initializes a new instance of the AESEncryption class with a randomly generated key.
+        /// </summary>
         public AESEncryption()
         {
             GenerateKey();
         }
-
+        /// <summary>
+        /// Initializes a new instance of the AESEncryption class with a provided key.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <exception cref="ArgumentException"></exception>
         public AESEncryption(byte[] key)
         {
             if (key.Length * 8 != KeySize)
                 throw new ArgumentException($"Key size must be {KeySize} bits.");
             Key = key;
         }
-
+        /// <summary>
+        /// Generates a new random encryption key.
+        /// </summary>
         public void GenerateKey()
         {
             using (var aes = Aes.Create())
@@ -35,19 +53,30 @@ namespace ProjectServer
                 Key = aes.Key;
             }
         }
-
+        /// <summary>
+        /// Retrieves the current encryption key.
+        /// </summary>
+        /// <returns></returns>
         public byte[] GetKey()
         {
             return Key;
         }
-
+        /// <summary>
+        ///  Sets a new encryption key.
+        /// </summary>
+        /// <param name="plainText"></param>
+        /// <returns></returns>
         public void SetKey(byte[] key)
         {
             if (key.Length * 8 != KeySize)
                 throw new ArgumentException($"Key size must be {KeySize} bits.");
             Key = key;
         }
-
+        /// <summary>
+        /// Encrypts the provided plaintext using AES encryption.
+        /// </summary>
+        /// <param name="plainText"></param>
+        /// <returns></returns>
         public byte[] Encrypt(byte[] plainText)
         {
             using (var aes = Aes.Create())
@@ -72,7 +101,11 @@ namespace ProjectServer
                 }
             }
         }
-
+        /// <summary>
+        /// Decrypts the provided ciphertext using AES decryption.
+        /// </summary>
+        /// <param name="cipherText"></param>
+        /// <returns></returns>
         public byte[] Decrypt(byte[] cipherText)
         {
             using (var aes = Aes.Create())
@@ -97,18 +130,6 @@ namespace ProjectServer
             }
         }
 
-        public string EncryptString(string plainText)
-        {
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-            byte[] cipherBytes = Encrypt(plainBytes);
-            return Convert.ToBase64String(cipherBytes);
-        }
 
-        public string DecryptString(string cipherText)
-        {
-            byte[] cipherBytes = Convert.FromBase64String(cipherText);
-            byte[] plainBytes = Decrypt(cipherBytes);
-            return Encoding.UTF8.GetString(plainBytes);
-        }
     }
 }

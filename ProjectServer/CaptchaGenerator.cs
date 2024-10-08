@@ -12,6 +12,7 @@ namespace ProjectServer
 {
     internal class CaptchaGenerator
     {// taken from claude
+     // this is the class that will generate the captcha
         /// <summary>
         /// Stores the current CAPTCHA text for validation.
         /// </summary>
@@ -33,7 +34,7 @@ namespace ProjectServer
         /// <summary>
         /// Generates a random CAPTCHA text.
         /// </summary>
-        /// <returns>A string containing the generated CAPTCHA text.</returns>
+        /// <returns></returns>A string containing the generated CAPTCHA text.
         public string GenerateCaptchaText()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -48,7 +49,7 @@ namespace ProjectServer
         /// Generates a CAPTCHA image based on the provided text.
         /// </summary>
         /// <param name="captchaText">The text to be rendered in the CAPTCHA image.</param>
-        /// <returns>A byte array representing the PNG image of the CAPTCHA.</returns>
+        /// <returns></returns>A byte array representing the PNG image of the CAPTCHA.
         public byte[] GenerateCaptchaImage(string captchaText)
         {
             using (var bitmap = new Bitmap(130, 40))
