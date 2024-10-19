@@ -11,6 +11,8 @@ namespace ProjectServer
 {
     public class TcpServer
     {
+
+        public SharedDrawingManager DrawingManager { get; private set; }
         // Store list of all clients connecting to the server
         // the list is static so all memebers of the chat will be able to obtain list
         // of current connected client
@@ -35,6 +37,7 @@ namespace ProjectServer
 
         public void Listen()
         {
+            DrawingManager = new SharedDrawingManager(this);
             IPAddress localAdd = IPAddress.Parse(ipAddress);
             TcpListener listener = new TcpListener(localAdd, portNo);
             Console.WriteLine("Simple TCP Server");
@@ -75,6 +78,24 @@ namespace ProjectServer
                 }
             }
             return false;
+        }
+        public void BroadCast(string command,string message,bool isDrawing)
+        {
+            foreach(DictionaryEntry c in Sessions)
+            {
+                TcpClientSession client = (TcpClientSession)(c.Value);
+                if (isDrawing)
+                {
+                    if (client.openedDrawing)
+                    {
+                        client.SendMessage(command, message);
+                    }
+                }
+                else
+                {
+                    client.SendMessage(command, message);
+                }
+            }
         }
     }
 }

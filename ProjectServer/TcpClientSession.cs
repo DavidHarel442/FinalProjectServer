@@ -51,6 +51,10 @@ namespace ProjectServer
         /// this property is an object that will handle all messages
         /// </summary>
         private MessageHandler messageHandler;
+        /// <summary>
+        /// boolean that determines if the player asked to open drawing board
+        /// </summary>
+        public bool openedDrawing = false;
         
         /// <summary>
         /// When the client gets connected to the server the server will create an instance of the ClientSession and pass the TcpClient

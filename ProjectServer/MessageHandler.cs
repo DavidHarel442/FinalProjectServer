@@ -1,6 +1,12 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,10 +60,37 @@ namespace ProjectServer
                 case "Verify":
                     HandleAuthentication(true, message);
                     break;
+                case "OpenedDrawing":
+                    clientSession.openedDrawing = true;
+                    break;
+                case "RequestDrawingState":
+                    HandleDrawingStateRequest();
+                    break;
+                case "RequestFullDrawingState":
+                    ServerManager.tcpServer.DrawingManager.RequestFullDrawingState(clientSession);
+                    break;
+
+                case "SendFullDrawingState":
+                    string[] parts = message.Arguments.Split('\t');
+                    if (parts.Length == 2)
+                    {
+                        string recipientIP = parts[0];
+                        string imageData = parts[1];
+                        ServerManager.tcpServer.DrawingManager.SendFullDrawingState(imageData, recipientIP);
+                    }
+                    break;
+                case "DrawingAction":
+                    DrawingAction action = DrawingAction.Deserialize(message.Arguments);
+                    ServerManager.tcpServer.DrawingManager.AddAction(action);
+                    break;
+
                 default:
                     break;
             }
         }
+        /// <summary>
+        /// this property is incharge of the object capable of generating the captcha for lign
+        /// </summary>
         private CaptchaGenerator captchaGenerator = new CaptchaGenerator();
         /// <summary>
         /// this function will send code to mail for two step authentication and captcha for triple one. and verifies them 
@@ -193,6 +226,21 @@ namespace ProjectServer
             {
                 Console.WriteLine($"Error handling username message: {ex.Message}");
                 clientSession.SendMessage("ERROR", "InvalidUsernameMessage");
+            }
+        }
+
+
+        private void HandleDrawingStateRequest()
+        {
+            // Request the current drawing state from all clients
+            foreach (DictionaryEntry entry in ServerManager.tcpServer.Sessions)
+            {
+                TcpClientSession session = (TcpClientSession)entry.Value;
+                if (session.openedDrawing && session != clientSession)
+                {
+                    session.SendMessage("SendDrawingState", "");
+                    break; // We only need to request from one client
+                }
             }
         }
     }
