@@ -63,13 +63,9 @@ namespace ProjectServer
                 case "OpenedDrawing":
                     clientSession.openedDrawing = true;
                     break;
-                case "RequestDrawingState":
-                    HandleDrawingStateRequest();
-                    break;
                 case "RequestFullDrawingState":
-                    ServerManager.tcpServer.DrawingManager.RequestFullDrawingState(clientSession);
+                    ServerManager.tcpServer.DrawingManager.RequestedFullDrawingState(clientSession);
                     break;
-
                 case "SendFullDrawingState":
                     string[] parts = message.Arguments.Split('\t');
                     if (parts.Length == 2)
@@ -80,10 +76,8 @@ namespace ProjectServer
                     }
                     break;
                 case "DrawingAction":
-                    DrawingAction action = DrawingAction.Deserialize(message.Arguments);
-                    ServerManager.tcpServer.DrawingManager.AddAction(action);
+                    ServerManager.tcpServer.BroadCastExceptOne("DrawingUpdate",message.Arguments,true,message.Username);
                     break;
-
                 default:
                     break;
             }
@@ -91,7 +85,7 @@ namespace ProjectServer
         /// <summary>
         /// this property is incharge of the object capable of generating the captcha for lign
         /// </summary>
-        private CaptchaGenerator captchaGenerator = new CaptchaGenerator();
+        private CaptchaGenerator captchaGenerator;
         /// <summary>
         /// this function will send code to mail for two step authentication and captcha for triple one. and verifies them 
         /// </summary>
@@ -230,18 +224,5 @@ namespace ProjectServer
         }
 
 
-        private void HandleDrawingStateRequest()
-        {
-            // Request the current drawing state from all clients
-            foreach (DictionaryEntry entry in ServerManager.tcpServer.Sessions)
-            {
-                TcpClientSession session = (TcpClientSession)entry.Value;
-                if (session.openedDrawing && session != clientSession)
-                {
-                    session.SendMessage("SendDrawingState", "");
-                    break; // We only need to request from one client
-                }
-            }
-        }
     }
 }

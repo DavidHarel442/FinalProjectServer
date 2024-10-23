@@ -35,6 +35,9 @@ namespace ProjectServer
         /// </summary>
         private const string ipAddress = "127.0.0.1";
 
+        /// <summary>
+        /// this function starts the TcpServer, it starts the listener and begins listening.
+        /// </summary>
         public void Listen()
         {
             DrawingManager = new SharedDrawingManager(this);
@@ -57,7 +60,10 @@ namespace ProjectServer
                 }
             }
         }
-
+        /// <summary>
+        /// this function will receive an ip and remove from the session hashtable the client with the ip
+        /// </summary>
+        /// <param name="clientIP"></param>
         public void RemoveClientSession(string clientIP)
         {
             if (Sessions.ContainsKey(clientIP))
@@ -66,7 +72,12 @@ namespace ProjectServer
                 Console.WriteLine($"Removed client session: {clientIP}");
             }
         }
-
+        /// <summary>
+        /// this function will be called to check if someone is trying to connect from an already connect client.
+        /// it will return true if someone is trying to connect from an already connected client and false if otherwise
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public bool SomeoneAlreadyConnected(string username)
         {
             foreach (DictionaryEntry c in Sessions)
@@ -79,6 +90,14 @@ namespace ProjectServer
             }
             return false;
         }
+        /// <summary>
+        /// this function receives a command and a message and if its related to drawing,
+        /// it will send all the clients the message with the command and message itself.
+        /// if its related to drawing it will send only someone who opened the drawing
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="message"></param>
+        /// <param name="isDrawing"></param>
         public void BroadCast(string command,string message,bool isDrawing)
         {
             foreach(DictionaryEntry c in Sessions)
@@ -94,6 +113,37 @@ namespace ProjectServer
                 else
                 {
                     client.SendMessage(command, message);
+                }
+            }
+        }
+        /// <summary>
+        /// this function receives a command and a message and if its related to drawing and a username,
+        /// it will send all the clients except one(the client with the username specified in the parameters)
+        /// the message with the command and message itself.
+        /// if its related to drawing it will send only someone who opened the drawing
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="message"></param>
+        /// <param name="isDrawing"></param>
+        /// <param name="username"></param>
+        public void BroadCastExceptOne(string command, string message, bool isDrawing,string username)
+        {
+            foreach (DictionaryEntry c in Sessions)
+            {
+                TcpClientSession client = (TcpClientSession)(c.Value);
+                if (client._ClientNick != username)
+                {
+                    if (isDrawing)
+                    {
+                        if (client.openedDrawing)
+                        {
+                            client.SendMessage(command, message);
+                        }
+                    }
+                    else
+                    {
+                        client.SendMessage(command, message);
+                    }
                 }
             }
         }

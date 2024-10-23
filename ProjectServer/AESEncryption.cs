@@ -31,17 +31,6 @@ namespace ProjectServer
             GenerateKey();
         }
         /// <summary>
-        /// Initializes a new instance of the AESEncryption class with a provided key.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public AESEncryption(byte[] key)
-        {
-            if (key.Length * 8 != KeySize)
-                throw new ArgumentException($"Key size must be {KeySize} bits.");
-            Key = key;
-        }
-        /// <summary>
         /// Generates a new random encryption key.
         /// </summary>
         public void GenerateKey()
@@ -60,17 +49,6 @@ namespace ProjectServer
         public byte[] GetKey()
         {
             return Key;
-        }
-        /// <summary>
-        ///  Sets a new encryption key.
-        /// </summary>
-        /// <param name="plainText"></param>
-        /// <returns></returns>
-        public void SetKey(byte[] key)
-        {
-            if (key.Length * 8 != KeySize)
-                throw new ArgumentException($"Key size must be {KeySize} bits.");
-            Key = key;
         }
         /// <summary>
         /// Encrypts the provided plaintext using AES encryption.

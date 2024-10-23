@@ -35,7 +35,9 @@ namespace ProjectServer
 
 
 
-
+        /// <summary>
+        /// object that contains the current client that the server does actions on currently.
+        /// </summary>
         public TcpClientSession clientSession = null;
         /// <summary>
         /// constructor. receives a communication protocol object and equals it to the property that is null

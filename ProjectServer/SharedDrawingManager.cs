@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Net;
 
 
 namespace ProjectServer
@@ -13,51 +14,53 @@ namespace ProjectServer
     public class SharedDrawingManager
     {// this class will be incharge of managing the drawing
 
-        private List<DrawingAction> drawingActions = new List<DrawingAction>();
-
+        /// <summary>
+        /// property that allows this class to have access to the session hashtable 
+        /// </summary>
         private TcpServer tcpServer;
 
-
+        /// <summary>
+        /// constructor that receives the TcpServer object
+        /// </summary>
+        /// <param name="server"></param>
         public SharedDrawingManager(TcpServer server)
         {
             this.tcpServer = server;
         }
-
-
-        public void AddAction(DrawingAction action)
-        {
-            drawingActions.Add(action);
-            BroadcastAction(action);
-        }
-
-        private void BroadcastAction(DrawingAction action)
-        {
-            foreach (DictionaryEntry entry in tcpServer.Sessions)
-            {
-                TcpClientSession clientSession = (TcpClientSession)entry.Value;
-                clientSession.SendMessage("DrawingUpdate", action.Serialize());
-            }
-        }
-
-        public void RequestFullDrawingState(TcpClientSession newClient)
+        /// <summary>
+        /// this function will be called when a new user joines the shared drawing board and he requests the board.
+        /// it will go over all the connected clients in the session hashtable and send 1 user that opened the drawingBoard to send him the current drawing board
+        /// </summary>
+        /// <param name="newClient"></param>
+        public void RequestedFullDrawingState(TcpClientSession newClient)
         {
             foreach (DictionaryEntry entry in tcpServer.Sessions)
             {
                 TcpClientSession clientSession = (TcpClientSession)entry.Value;
                 if (clientSession != newClient && clientSession.openedDrawing)
                 {
-                    clientSession.SendMessage("SendFullDrawingState", newClient.GetClientIP);
+                    clientSession.SendMessage("SendFullDrawingState", newClient._ClientNick);
                     break; // We only need to request from one client
                 }
             }
         }
-
-        public void SendFullDrawingState(string imageData, string recipientIP)
+        /// <summary>
+        /// this function will be called after the "RequestedFullDrawingState" function was called,
+        /// and the client it sent the request already sent back the board.
+        /// it will send the client with the received ip the board state
+        /// </summary>
+        /// <param name="imageData"></param>
+        /// <param name="recipientIP"></param>
+        public void SendFullDrawingState(string imageData, string clientNick)
         {
-            TcpClientSession recipient = tcpServer.Sessions[recipientIP] as TcpClientSession;
-            if (recipient != null)
+            foreach (DictionaryEntry entry in tcpServer.Sessions)
             {
-                recipient.SendMessage("FullDrawingState", imageData);
+                TcpClientSession clientSession = (TcpClientSession)entry.Value;
+                if (clientSession._ClientNick == clientNick)
+                {
+                    clientSession.SendMessage("FullDrawingState", imageData);
+                    
+                }
             }
         }
 
