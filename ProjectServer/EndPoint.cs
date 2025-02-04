@@ -16,6 +16,11 @@ namespace ProjectServer
         /// </summary>
         public LinkedList<DateTime> TimeStamps = new LinkedList<DateTime>();
         /// <summary>
+        /// property for tracking connection attemps 
+        /// </summary>
+        public LinkedList<DateTime> connectionAttempts = new LinkedList<DateTime>();
+
+        /// <summary>
         /// this property 'ip' contains the IPAddress of the object.
         /// </summary>
         public IPAddress ip;

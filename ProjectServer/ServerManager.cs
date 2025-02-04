@@ -13,6 +13,7 @@ namespace ProjectServer
     {//the class that runs when you start the run. By pressing 'Start'. this class is incharge of the ServerManager. it basically managers the servers
 
         public static TcpServer tcpServer;
+        public static UdpImageServer udpServer;
         /// <summary>
         /// the main. function that runs when the server runs, By pressing on "Start" or F5
         /// </summary>
@@ -20,6 +21,12 @@ namespace ProjectServer
         static void Main(string[] args)
         {
             tcpServer = new TcpServer();
+            udpServer = new UdpImageServer(5001, tcpServer.DrawingManager);
+
+            // Start UDP server asynchronously
+            Task.Run(() => udpServer.StartListening());
+
+            // Start TCP server
             tcpServer.Listen();
         }
 

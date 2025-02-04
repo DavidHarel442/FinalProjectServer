@@ -65,7 +65,9 @@
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
     <Compile Include="CaptchaGenerator.cs" />
+    <Compile Include="DrawingAction.cs" />
     <Compile Include="EncryptionManager.cs" />
+    <Compile Include="FramePacket.cs" />
     <Compile Include="MailSender.cs" />
     <Compile Include="LoginAndRegister.cs" />
     <Compile Include="SharedDrawingManager.cs" />
@@ -80,12 +82,14 @@
     <Compile Include="ServerManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TcpServer.cs" />
+    <Compile Include="UdpImageServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="LogFile.txt" />
     <Content Include="UsersDB.mdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

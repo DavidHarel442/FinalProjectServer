@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace ProjectServer
 {
@@ -56,11 +57,12 @@ namespace ProjectServer
         /// </summary>
         public bool openedDrawing = false;
         
+        private DosProtection dosProtection = null;
         /// <summary>
         /// When the client gets connected to the server the server will create an instance of the ClientSession and pass the TcpClient
         /// </summary>
         /// <param name="client"></param>
-        public TcpClientSession(TcpClient client, TcpCommunicationProtocol communicationProtocol)
+        public TcpClientSession(TcpClient client, TcpCommunicationProtocol communicationProtocol, DosProtection dosProtection)
         {
             _client = client;
             this.communicationProtocol = communicationProtocol;
@@ -69,6 +71,7 @@ namespace ProjectServer
             data = new byte[_client.ReceiveBufferSize];
 
             _client.GetStream().BeginRead(data, 0, System.Convert.ToInt32(_client.ReceiveBufferSize), ReceiveMessage, null);
+            this.dosProtection = dosProtection;
         }
         /// <summary>
         /// this funcion is used when the client send a message. it converts the string into bytes and sends it using the Tcp Protocol
@@ -122,6 +125,16 @@ namespace ProjectServer
                 if (bytesRead < 1)
                 {
                     Console.WriteLine($"Client disconnected: {GetClientIP}");
+                    try
+                    {
+                        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        string logMessage = $"[{timestamp}] Connection closed  - Client: {GetClientIP}\n";
+                        File.AppendAllText("D:\\Visual Studio\\ProjectServer\\ProjectServer\\LogFile.txt", logMessage);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error writing to log file: {ex.Message}");
+                    }
                     ServerManager.tcpServer.RemoveClientSession(GetClientIP);
                     return;
                 }
@@ -143,7 +156,10 @@ namespace ProjectServer
                     List<TcpProtocolMessage> messages = communicationProtocol.FromProtocol(messageReceived);
                     foreach (TcpProtocolMessage message in messages)
                     {
-                        HandleMessage(message);
+                        if (dosProtection.ShouldAllowToContinueSession(IPAddress.Parse(this.clientIP.Substring(0, this.clientIP.IndexOf(":"))),false))
+                        {
+                            HandleMessage(message);
+                        }
                     }
                 }
 
@@ -189,6 +205,7 @@ namespace ProjectServer
             else
             {
                 SendMessage("ERROR", "InvalidInitialMessage");
+
                 ServerManager.tcpServer.RemoveClientSession(GetClientIP);
             }
         }

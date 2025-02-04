@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace ProjectServer
 {
@@ -47,16 +48,27 @@ namespace ProjectServer
             Console.WriteLine($"Listening on ip {ipAddress} port: {portNo}");
             Console.WriteLine("Server is ready.");
             listener.Start();
-
             while (true)
             {
                 TcpClient tcpClient = listener.AcceptTcpClient();
                 Console.WriteLine($"New socket: {tcpClient.Client.RemoteEndPoint}");
                 IPAddress ip = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
-                if (IPDosManager.ShouldAllowToContinueSession(ip))
+                if (IPDosManager.ShouldAllowToContinueSession(ip,true))
                 {
-                    TcpClientSession userSession = new TcpClientSession(tcpClient, communicationProtocol);
+                    TcpClientSession userSession = new TcpClientSession(tcpClient, communicationProtocol, IPDosManager);
                     Sessions.Add(userSession.GetClientIP, userSession);
+
+
+                    try
+                    {
+                        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        string logMessage = $"[{timestamp}] New connection created - Client: {userSession.GetClientIP}\n";
+                        File.AppendAllText("D:\\Visual Studio\\ProjectServer\\ProjectServer\\LogFile.txt", logMessage);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error writing to log file: {ex.Message}");
+                    }
                 }
             }
         }

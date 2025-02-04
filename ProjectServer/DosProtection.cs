@@ -15,8 +15,8 @@ namespace ProjectServer
         /// <summary>
         /// this property 'IPSList' contains the list of all the ips the server communicated with
         /// </summary>
-        public List<EndPoint> IPSList = new List<EndPoint>();
-
+        public List<EndPoint> ipsList = new List<EndPoint>();
+        private const int maxConnectionsPerMinute = 20;  // New constant for connection limit
 
         /// <summary>
         /// this function check if the recieved ip exists in the list "IPSList"
@@ -25,9 +25,9 @@ namespace ProjectServer
         /// <returns></returns>
         public bool IsIPExistInList(IPAddress ip)
         {
-            for (int i = 0; i < IPSList.Count; i++)
+            for (int i = 0; i < ipsList.Count; i++)
             {
-                if (IPSList.ElementAt(i).ip.Equals(ip))
+                if (ipsList.ElementAt(i).ip.Equals(ip))
                 {
                     return true;
                 }
@@ -42,9 +42,9 @@ namespace ProjectServer
         /// <returns></returns>
         public int GetIndextOfIPLocation(IPAddress ip)
         {
-            for (int i = 0; i < IPSList.Count; i++)
+            for (int i = 0; i < ipsList.Count; i++)
             {
-                if (IPSList.ElementAt(i).ip.Equals(ip))
+                if (ipsList.ElementAt(i).ip.Equals(ip))
                 {
                     return i;
                 }
@@ -59,55 +59,81 @@ namespace ProjectServer
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        public bool ShouldAllowToContinueSession(IPAddress ip)
+        public bool ShouldAllowToContinueSession(IPAddress ip,bool startingSession)
         {
-            if (IPSList.Count != 0)
+            if (ipsList.Count != 0)
             {
-                for (int i = 0; i < IPSList.Count; i++)
+                for (int i = 0; i < ipsList.Count; i++)
                 {
-                    if (IPSList.ElementAt(i).TimeStamps.Count > 0)
+                    if (ipsList.ElementAt(i).TimeStamps.Count > 0)
                     {
-                        TimeSpan LastRequestMadeForEachClient = DateTime.Now - IPSList.ElementAt(i).TimeStamps.ElementAt(IPSList.ElementAt(i).TimeStamps.Count - 1);
+                        TimeSpan LastRequestMadeForEachClient = DateTime.Now - ipsList.ElementAt(i).TimeStamps.ElementAt(ipsList.ElementAt(i).TimeStamps.Count - 1);
                         if (LastRequestMadeForEachClient.TotalHours >= 1)
                         {
-                            IPSList.Remove(IPSList.ElementAt(i));
+                            ipsList.Remove(ipsList.ElementAt(i));
                         }
                     }
                 }
             }
+
             if (IsIPExistInList(ip))
             {
                 DateTime CurrentTime = DateTime.Now;
                 int index = GetIndextOfIPLocation(ip);
-                IPSList.ElementAt(index).TimeStamps.AddLast(CurrentTime);
-                if (ShouldGetBlocked(ip))
+                var endpoint = ipsList.ElementAt(index);
+
+                // Handle blocked status check
+                if (endpoint.isBlocked)
                 {
-                    IPSList.ElementAt(index).isBlocked = true;
-                    IPSList.ElementAt(index).BlockedTimeSince = DateTime.Now;
-                    IPSList.ElementAt(index).TimeStamps.Clear();
-                    return false;
-                }
-                else if (IPSList.ElementAt(index).isBlocked)
-                {
-                    TimeSpan timeSpan = DateTime.Now - IPSList.ElementAt(index).BlockedTimeSince;
+                    TimeSpan timeSpan = DateTime.Now - endpoint.BlockedTimeSince;
                     if (timeSpan.TotalMinutes > 30)
                     {
-                        IPSList.ElementAt(index).isBlocked = false;
-                        IPSList.ElementAt(index).TimeStamps.AddLast(CurrentTime);
+                        endpoint.isBlocked = false;
+                        endpoint.TimeStamps.Clear();
+                        endpoint.connectionAttempts.Clear();
                     }
                     else
                     {
-                        return false;
+                        return false;  // Still blocked
                     }
                 }
 
+                // Handle the request based on type
+                if (startingSession)
+                {
+                    endpoint.connectionAttempts.AddLast(CurrentTime);
+                    if (ShouldGetBlockedDueToConnections(ip))
+                    {
+                        endpoint.isBlocked = true;
+                        endpoint.BlockedTimeSince = DateTime.Now;
+                        endpoint.TimeStamps.Clear();
+                        endpoint.connectionAttempts.Clear();
+                        return false;
+                    }
+                }
+                else
+                {
+                    endpoint.TimeStamps.AddLast(CurrentTime);
+                    if (ShouldGetBlocked(ip))
+                    {
+                        endpoint.isBlocked = true;
+                        endpoint.BlockedTimeSince = DateTime.Now;
+                        endpoint.TimeStamps.Clear();
+                        endpoint.connectionAttempts.Clear();
+                        return false;
+                    }
+                }
             }
             else
             {
-                IPAddress Ip = ip;
                 EndPoint ToInsert = new EndPoint(DateTime.Now, ip);
-                IPSList.Add(ToInsert);
+                if (startingSession)
+                {
+                    ToInsert.connectionAttempts.AddLast(DateTime.Now);
+                }
+                ipsList.Add(ToInsert);
             }
+
             return true;
         }
 
@@ -120,7 +146,7 @@ namespace ProjectServer
         public bool ShouldGetBlocked(IPAddress ip)
         {
             int index = GetIndextOfIPLocation(ip);
-            EndPoint IPClient = IPSList.ElementAt(index);
+            EndPoint IPClient = ipsList.ElementAt(index);
             for (int i = 0; i < IPClient.TimeStamps.Count; i++)
             {
                 if ((DateTime.Now.Minute - IPClient.TimeStamps.ElementAt(i).Minute) > 1 || DateTime.Now.Hour != IPClient.TimeStamps.ElementAt(i).Hour || DateTime.Now.Day != IPClient.TimeStamps.ElementAt(i).Day)
@@ -141,23 +167,28 @@ namespace ProjectServer
                 return false;
             }
         }
-
         /// <summary>
-        /// this fucntion recieves an ip address as a string and returns the ClientSession in the hashtable with that ip. Assumption: the ip exists in the hashtable
+        /// this function is called in the handler "ShouldAllowToContinueSession"
+        /// and checks if the certain ip made over 'maxConnectionsPerMinute' connections in the last min if he did the function returns true if not it returns false.
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        public TcpClientSession GetClientByIP(string ip)
+        public bool ShouldGetBlockedDueToConnections(IPAddress ip)
         {
-            foreach (DictionaryEntry c in ServerManager.tcpServer.Sessions)
+            int index = GetIndextOfIPLocation(ip);
+            EndPoint IPClient = ipsList.ElementAt(index);
+            for (int i = 0; i < IPClient.connectionAttempts.Count; i++)
             {
-                TcpClientSession client = ((TcpClientSession)(c.Value));
-                if (client.GetClientIP == ip)
+                if ((DateTime.Now.Minute - IPClient.TimeStamps.ElementAt(i).Minute) > 1 || DateTime.Now.Hour != IPClient.TimeStamps.ElementAt(i).Hour || DateTime.Now.Day != IPClient.TimeStamps.ElementAt(i).Day)
                 {
-                    return client;
+                    IPClient.connectionAttempts.Remove(IPClient.TimeStamps.ElementAt(i));
+                }
+                else
+                {
+                    break;
                 }
             }
-            return null;
+            return IPClient.connectionAttempts.Count > maxConnectionsPerMinute;
         }
     }
 }
