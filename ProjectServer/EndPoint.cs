@@ -12,36 +12,41 @@ namespace ProjectServer
         // this class is the class for each client that saves their requests
 
         /// <summary>
-        /// this property 'TimeStamps' contains a list of the time of all the request made by a certain ip 
+        /// The IP address of the client
         /// </summary>
-        public LinkedList<DateTime> TimeStamps = new LinkedList<DateTime>();
-        /// <summary>
-        /// property for tracking connection attemps 
-        /// </summary>
-        public LinkedList<DateTime> connectionAttempts = new LinkedList<DateTime>();
+        public IPAddress Ip { get; private set; }
 
         /// <summary>
-        /// this property 'ip' contains the IPAddress of the object.
+        /// Timestamps of requests from this client
         /// </summary>
-        public IPAddress ip;
-        /// <summary>
-        /// this property 'isBlocked' contains a value Whether the ip is blocked or not. if it is blocked it is blocked for 30 min
-        /// </summary>
-        public bool isBlocked = false;
-        /// <summary>
-        /// this  property contains the time that the user got blocked
-        /// </summary>
-        public DateTime BlockedTimeSince = new DateTime();
+        public LinkedList<DateTime> TimeStamps { get; private set; }
 
         /// <summary>
-        /// this function is a constructor for the object EndPoint.
+        /// Timestamps of connection attempts from this client
         /// </summary>
-        /// <param name="timeStamp"></param>
-        /// <param name="IP"></param>
-        public EndPoint(DateTime timeStamp, IPAddress IP)
+        public LinkedList<DateTime> ConnectionAttempts { get; private set; }
+
+        /// <summary>
+        /// Indicates if this client is currently blocked
+        /// </summary>
+        public bool IsBlocked { get; set; }
+
+        /// <summary>
+        /// The time when this client was blocked
+        /// </summary>
+        public DateTime BlockedTimeSince { get; set; }
+
+        /// <summary>
+        /// Creates a new endpoint tracking instance
+        /// </summary>
+        /// <param name="firstSeen">When this client was first seen</param>
+        /// <param name="ip">The IP address of the client</param>
+        public EndPoint(DateTime firstSeen, IPAddress ip)
         {
-            TimeStamps.AddLast(timeStamp);
-            ip = IP;
+            TimeStamps = new LinkedList<DateTime>();
+            ConnectionAttempts = new LinkedList<DateTime>();
+            Ip = ip;
+            IsBlocked = false;
         }
     }
 }

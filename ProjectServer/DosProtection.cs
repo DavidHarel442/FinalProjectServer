@@ -10,41 +10,57 @@ namespace ProjectServer
 {
     public class DosProtection
     {
-        // this class's goal is to protect the server from a Dos Attack. he is saving a list of all the clients. a list of type "EndPoint"
+        /// <summary>
+        /// List of all client endpoints the server has communicated with
+        /// </summary>
+        private readonly List<EndPoint> ipsList = new List<EndPoint>();
 
         /// <summary>
-        /// this property 'IPSList' contains the list of all the ips the server communicated with
+        /// Maximum number of connections allowed per client per minute
         /// </summary>
-        public List<EndPoint> ipsList = new List<EndPoint>();
-        private const int maxConnectionsPerMinute = 20;  // New constant for connection limit
+        private const int MaxConnectionsPerMinute = 1000;
 
         /// <summary>
-        /// this function check if the recieved ip exists in the list "IPSList"
+        /// Maximum number of requests allowed per client per minute
         /// </summary>
-        /// <param name="ip"></param>
-        /// <returns></returns>
+        private const int MaxRequestsPerMinute = 200;
+
+        /// <summary>
+        /// Duration in minutes for how long a client remains blocked
+        /// </summary>
+        private const int BlockDurationMinutes = 30;
+
+        /// <summary>
+        /// Duration in hours after which inactive clients are removed from tracking
+        /// </summary>
+        private const int InactivityTimeoutHours = 1;
+
+        /// <summary>
+        /// Checks if the received IP exists in the tracked clients list
+        /// </summary>
+        /// <param name="ip">The IP address to check</param>
+        /// <returns>True if the IP exists in the list, otherwise false</returns>
         public bool IsIPExistInList(IPAddress ip)
         {
-            for (int i = 0; i < ipsList.Count; i++)
-            {
-                if (ipsList.ElementAt(i).ip.Equals(ip))
-                {
-                    return true;
-                }
-            }
-            return false;
+            if (ip == null)
+                throw new ArgumentNullException(nameof(ip));
+
+            return ipsList.Any(endpoint => endpoint.Ip.Equals(ip));
         }
 
         /// <summary>
-        /// this function returns the index of the recieved ip. Assumption: the ip exists in the list
+        /// Returns the index of the received IP in the list
         /// </summary>
-        /// <param name="ip"></param>
-        /// <returns></returns>
-        public int GetIndextOfIPLocation(IPAddress ip)
+        /// <param name="ip">The IP address to find</param>
+        /// <returns>The index of the IP in the list, or -1 if not found</returns>
+        private int GetIndexOfIPLocation(IPAddress ip)
         {
+            if (ip == null)
+                throw new ArgumentNullException(nameof(ip));
+
             for (int i = 0; i < ipsList.Count; i++)
             {
-                if (ipsList.ElementAt(i).ip.Equals(ip))
+                if (ipsList[i].Ip.Equals(ip))
                 {
                     return i;
                 }
@@ -53,142 +69,165 @@ namespace ProjectServer
         }
 
         /// <summary>
-        /// this if the main function of this class. it is the handler. it checks if the server should allow the certain user to send requests. at first it checks every ip in the list if it made a request in the last hour, if not it deletes them from the list.
-        /// after that it check how much requests the certain ip made in the last min if it is over 100 it blocks him for 30 min. 
-        /// it also deletes timeStamps from over a minute since the call of the function.
+        /// Determines if the server should allow the client to continue its session
         /// </summary>
-        /// <param name="ip"></param>
-        /// <returns></returns>
-        public bool ShouldAllowToContinueSession(IPAddress ip,bool startingSession)
+        /// <param name="ip">The client's IP address</param>
+        /// <param name="startingSession">True if this is a new connection, false if it's an ongoing session request</param>
+        /// <returns>True if the client should be allowed to continue, false if blocked</returns>
+        public bool ShouldAllowToContinueSession(IPAddress ip, bool startingSession)
         {
-            if (ipsList.Count != 0)
-            {
-                for (int i = 0; i < ipsList.Count; i++)
-                {
-                    if (ipsList.ElementAt(i).TimeStamps.Count > 0)
-                    {
-                        TimeSpan LastRequestMadeForEachClient = DateTime.Now - ipsList.ElementAt(i).TimeStamps.ElementAt(ipsList.ElementAt(i).TimeStamps.Count - 1);
-                        if (LastRequestMadeForEachClient.TotalHours >= 1)
-                        {
-                            ipsList.Remove(ipsList.ElementAt(i));
-                        }
-                    }
-                }
-            }
+            if (ip == null)
+                throw new ArgumentNullException(nameof(ip));
+
+            // Remove inactive clients
+            CleanupInactiveClients();
 
             if (IsIPExistInList(ip))
             {
-                DateTime CurrentTime = DateTime.Now;
-                int index = GetIndextOfIPLocation(ip);
-                var endpoint = ipsList.ElementAt(index);
+                int index = GetIndexOfIPLocation(ip);
+                EndPoint endpoint = ipsList[index];
+                DateTime currentTime = DateTime.Now;
 
-                // Handle blocked status check
-                if (endpoint.isBlocked)
+                // Check if client is blocked
+                if (endpoint.IsBlocked)
                 {
-                    TimeSpan timeSpan = DateTime.Now - endpoint.BlockedTimeSince;
-                    if (timeSpan.TotalMinutes > 30)
+                    TimeSpan blockedDuration = currentTime - endpoint.BlockedTimeSince;
+                    if (blockedDuration.TotalMinutes > BlockDurationMinutes)
                     {
-                        endpoint.isBlocked = false;
+                        // Unblock client after block duration
+                        endpoint.IsBlocked = false;
                         endpoint.TimeStamps.Clear();
-                        endpoint.connectionAttempts.Clear();
+                        endpoint.ConnectionAttempts.Clear();
                     }
                     else
                     {
-                        return false;  // Still blocked
+                        return false; // Still blocked
                     }
                 }
 
-                // Handle the request based on type
+                // Handle request based on type
                 if (startingSession)
                 {
-                    endpoint.connectionAttempts.AddLast(CurrentTime);
-                    if (ShouldGetBlockedDueToConnections(ip))
+                    // Track new connection attempt
+                    endpoint.ConnectionAttempts.AddLast(currentTime);
+
+                    // Clean old connection attempts
+                    CleanupOldTimestamps(endpoint.ConnectionAttempts);
+
+                    if (endpoint.ConnectionAttempts.Count > MaxConnectionsPerMinute)
                     {
-                        endpoint.isBlocked = true;
-                        endpoint.BlockedTimeSince = DateTime.Now;
-                        endpoint.TimeStamps.Clear();
-                        endpoint.connectionAttempts.Clear();
+                        BlockEndpoint(endpoint);
                         return false;
                     }
                 }
                 else
                 {
-                    endpoint.TimeStamps.AddLast(CurrentTime);
-                    if (ShouldGetBlocked(ip))
+                    // Track new request
+                    endpoint.TimeStamps.AddLast(currentTime);
+
+                    // Clean old request timestamps
+                    CleanupOldTimestamps(endpoint.TimeStamps);
+
+                    if (endpoint.TimeStamps.Count > MaxRequestsPerMinute)
                     {
-                        endpoint.isBlocked = true;
-                        endpoint.BlockedTimeSince = DateTime.Now;
-                        endpoint.TimeStamps.Clear();
-                        endpoint.connectionAttempts.Clear();
+                        BlockEndpoint(endpoint);
                         return false;
                     }
                 }
             }
             else
             {
-                EndPoint ToInsert = new EndPoint(DateTime.Now, ip);
+                // Create new endpoint tracking for this IP
+                EndPoint newEndpoint = new EndPoint(DateTime.Now, ip);
                 if (startingSession)
                 {
-                    ToInsert.connectionAttempts.AddLast(DateTime.Now);
+                    newEndpoint.ConnectionAttempts.AddLast(DateTime.Now);
                 }
-                ipsList.Add(ToInsert);
+                else
+                {
+                    newEndpoint.TimeStamps.AddLast(DateTime.Now);
+                }
+                ipsList.Add(newEndpoint);
             }
 
             return true;
         }
 
         /// <summary>
-        /// this function is called in the handler "ShouldAllowToContinueSession"
-        /// and checks if the certain ip made over 100 requests in the last min if he did the function returns true if not it returns false.
+        /// Removes timestamps older than one minute from a timestamp collection
         /// </summary>
-        /// <param name="ip"></param>
-        /// <returns></returns>
-        public bool ShouldGetBlocked(IPAddress ip)
+        /// <param name="timestamps">The collection of timestamps to clean</param>
+        private void CleanupOldTimestamps(LinkedList<DateTime> timestamps)
         {
-            int index = GetIndextOfIPLocation(ip);
-            EndPoint IPClient = ipsList.ElementAt(index);
-            for (int i = 0; i < IPClient.TimeStamps.Count; i++)
+            if (timestamps.Count == 0)
+                return;
+
+            DateTime oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+
+            // Remove timestamps older than one minute
+            while (timestamps.Count > 0 && timestamps.First.Value < oneMinuteAgo)
             {
-                if ((DateTime.Now.Minute - IPClient.TimeStamps.ElementAt(i).Minute) > 1 || DateTime.Now.Hour != IPClient.TimeStamps.ElementAt(i).Hour || DateTime.Now.Day != IPClient.TimeStamps.ElementAt(i).Day)
-                {
-                    IPClient.TimeStamps.Remove(IPClient.TimeStamps.ElementAt(i));
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (IPClient.TimeStamps.Count > 200)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
+                timestamps.RemoveFirst();
             }
         }
+
         /// <summary>
-        /// this function is called in the handler "ShouldAllowToContinueSession"
-        /// and checks if the certain ip made over 'maxConnectionsPerMinute' connections in the last min if he did the function returns true if not it returns false.
+        /// Blocks an endpoint by setting the blocked flag and clearing its tracking data
         /// </summary>
-        /// <param name="ip"></param>
-        /// <returns></returns>
-        public bool ShouldGetBlockedDueToConnections(IPAddress ip)
+        /// <param name="endpoint">The endpoint to block</param>
+        private void BlockEndpoint(EndPoint endpoint)
         {
-            int index = GetIndextOfIPLocation(ip);
-            EndPoint IPClient = ipsList.ElementAt(index);
-            for (int i = 0; i < IPClient.connectionAttempts.Count; i++)
+            endpoint.IsBlocked = true;
+            endpoint.BlockedTimeSince = DateTime.Now;
+            endpoint.TimeStamps.Clear();
+            endpoint.ConnectionAttempts.Clear();
+        }
+
+        /// <summary>
+        /// Removes clients that have been inactive for more than the specified timeout
+        /// </summary>
+        private void CleanupInactiveClients()
+        {
+            if (ipsList.Count == 0)
+                return;
+
+            DateTime cutoffTime = DateTime.Now.AddHours(-InactivityTimeoutHours);
+
+            // Use a temporary list to avoid collection modification during enumeration
+            List<EndPoint> inactiveEndpoints = new List<EndPoint>();
+
+            foreach (EndPoint endpoint in ipsList)
             {
-                if ((DateTime.Now.Minute - IPClient.TimeStamps.ElementAt(i).Minute) > 1 || DateTime.Now.Hour != IPClient.TimeStamps.ElementAt(i).Hour || DateTime.Now.Day != IPClient.TimeStamps.ElementAt(i).Day)
+                DateTime lastActivity = GetLastActivity(endpoint);
+                if (lastActivity < cutoffTime)
                 {
-                    IPClient.connectionAttempts.Remove(IPClient.TimeStamps.ElementAt(i));
-                }
-                else
-                {
-                    break;
+                    inactiveEndpoints.Add(endpoint);
                 }
             }
-            return IPClient.connectionAttempts.Count > maxConnectionsPerMinute;
+
+            // Remove all inactive endpoints
+            foreach (EndPoint endpoint in inactiveEndpoints)
+            {
+                ipsList.Remove(endpoint);
+            }
+        }
+
+        /// <summary>
+        /// Gets the timestamp of the most recent activity for an endpoint
+        /// </summary>
+        /// <param name="endpoint">The endpoint to check</param>
+        /// <returns>The timestamp of the most recent activity</returns>
+        private DateTime GetLastActivity(EndPoint endpoint)
+        {
+            DateTime lastTimeStamp = endpoint.TimeStamps.Count > 0 ?
+                endpoint.TimeStamps.Last.Value :
+                DateTime.MinValue;
+
+            DateTime lastConnectionAttempt = endpoint.ConnectionAttempts.Count > 0 ?
+                endpoint.ConnectionAttempts.Last.Value :
+                DateTime.MinValue;
+
+            return lastTimeStamp > lastConnectionAttempt ? lastTimeStamp : lastConnectionAttempt;
         }
     }
 }
