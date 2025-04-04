@@ -3,9 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -23,10 +25,15 @@ namespace ProjectServer
         /// property to help managing the messages, specifically to send feedbacks and updates
         /// </summary>
         private TcpClientSession clientSession;
+
+        private SaveDrawings saveDrawings;
+
         public MessageHandler(TcpClientSession session)
         {
             clientSession = session;
             loginAndRegister = new LoginAndRegister(clientSession.communicationProtocol,clientSession);
+            saveDrawings = new SaveDrawings();
+
         }
         /// <summary>
         /// handles message. 
@@ -77,6 +84,97 @@ namespace ProjectServer
                     break;
                 case "DrawingAction":
                     ServerManager.tcpServer.BroadCastExceptOne("DrawingUpdate",message.Arguments,true,message.Username);
+                    break;
+                case "SaveDrawing":
+                    try
+                    {
+                        string[] parts123 = message.Arguments.Split('\t');
+                        if (parts123.Length >= 2)
+                        {
+                            string imageData = parts123[0];
+                            string drawingName = parts123[1];
+
+                            bool success = saveDrawings.SaveDrawing(message.Username, drawingName, imageData);
+
+                            if (success)
+                            {
+                                clientSession.SendMessage("Success", "DrawingSaved");
+                            }
+                            else
+                            {
+                                clientSession.SendMessage("Issue", "FailedToSaveDrawing");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in SaveDrawing: {ex.Message}");
+                        clientSession.SendMessage("Issue", "FailedToSaveDrawing");
+                    }
+                    break;
+                    
+                // Add new case for ListDrawings
+                case "ListDrawings":
+                    try
+                    {
+                        List<string> drawings = saveDrawings.GetUserDrawings(message.Username);
+                        string drawingsJson = JsonConvert.SerializeObject(drawings);
+                        clientSession.SendMessage("DrawingsList", drawingsJson);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in ListDrawings: {ex.Message}");
+                        clientSession.SendMessage("Issue", "FailedToListDrawings");
+                    }
+                    break;
+
+                // Add new case for LoadDrawing
+                case "LoadDrawing":
+                    try
+                    {
+                        string drawingName = message.Arguments;
+                        string imageData = saveDrawings.LoadDrawing(message.Username, drawingName);
+                        if (imageData != null)
+                        {
+                            // Send the drawing data to all clients using the existing FullDrawingState handler
+                            ServerManager.tcpServer.BroadCast("FullDrawingState", imageData);
+
+                            // Send success message to the client who requested the drawing
+                            clientSession.SendMessage("Success", "DrawingLoaded");
+                        }
+                        else
+                        {
+                            clientSession.SendMessage("Issue", "DrawingNotFound");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in LoadDrawing: {ex.Message}");
+                        clientSession.SendMessage("Issue", "FailedToLoadDrawing");
+                    }
+                    break;
+
+                // Add new case for DeleteDrawing
+                case "DeleteDrawing":
+                    try
+                    {
+                        string drawingName = message.Arguments;
+                        bool success = saveDrawings.DeleteDrawing(message.Username, drawingName);
+
+                        if (success)
+                        {
+                            clientSession.SendMessage("Success", "DrawingDeleted");
+                        }
+                        else
+                        {
+                            clientSession.SendMessage("Issue", "FailedToDeleteDrawing");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in DeleteDrawing: {ex.Message}");
+                        clientSession.SendMessage("Issue", "FailedToDeleteDrawing");
+                    }
                     break;
                 default:
                     break;

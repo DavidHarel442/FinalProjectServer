@@ -110,22 +110,12 @@ namespace ProjectServer
         /// <param name="command"></param>
         /// <param name="message"></param>
         /// <param name="isDrawing"></param>
-        public void BroadCast(string command,string message,bool isDrawing)
+        public void BroadCast(string command,string message)
         {
             foreach(DictionaryEntry c in Sessions)
             {
                 TcpClientSession client = (TcpClientSession)(c.Value);
-                if (isDrawing)
-                {
-                    if (client.openedDrawing)
-                    {
-                        client.SendMessage(command, message);
-                    }
-                }
-                else
-                {
-                    client.SendMessage(command, message);
-                }
+                client.SendMessage(command, message);
             }
         }
         /// <summary>
