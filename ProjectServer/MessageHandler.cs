@@ -67,10 +67,9 @@ namespace ProjectServer
                 case "Verify":
                     HandleAuthentication(true, message);
                     break;
-                case "OpenedDrawing":
-                    clientSession.openedDrawing = true;
-                    break;
                 case "RequestFullDrawingState":
+                    clientSession.openedDrawing = true;
+                    Console.WriteLine("goes in if");
                     ServerManager.tcpServer.DrawingManager.RequestedFullDrawingState(clientSession);
                     break;
                 case "SendFullDrawingState":
@@ -83,7 +82,7 @@ namespace ProjectServer
                     }
                     break;
                 case "DrawingAction":
-                    ServerManager.tcpServer.BroadCastExceptOne("DrawingUpdate",message.Arguments,true,message.Username);
+                    ServerManager.tcpServer.BroadCastExceptOne("DrawingUpdate",message.Arguments,message.Username);
                     break;
                 case "SaveDrawing":
                     try

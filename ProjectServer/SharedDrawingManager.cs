@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Net;
-
+using System.Threading;
 
 namespace ProjectServer
 {
@@ -37,6 +37,7 @@ namespace ProjectServer
             foreach (DictionaryEntry entry in tcpServer.Sessions)
             {
                 TcpClientSession clientSession = (TcpClientSession)entry.Value;
+                Console.WriteLine(clientSession.openedDrawing);
                 if (clientSession != newClient && clientSession.openedDrawing)
                 {
                     clientSession.SendMessage("SendFullDrawingState", newClient._ClientNick);

@@ -128,23 +128,16 @@ namespace ProjectServer
         /// <param name="message"></param>
         /// <param name="isDrawing"></param>
         /// <param name="username"></param>
-        public void BroadCastExceptOne(string command, string message, bool isDrawing,string username)
+        public void BroadCastExceptOne(string command, string message,string username)
         {
             foreach (DictionaryEntry c in Sessions)
             {
                 TcpClientSession client = (TcpClientSession)(c.Value);
                 if (client._ClientNick != username)
                 {
-                    if (isDrawing)
+                    if (client.openedDrawing)
                     {
-                        if (client.openedDrawing)
-                        {
-                            client.SendMessage(command, message);
-                        }
-                    }
-                    else
-                    {
-                        client.SendMessage(command, message);
+                         client.SendMessage(command, message);
                     }
                 }
             }
