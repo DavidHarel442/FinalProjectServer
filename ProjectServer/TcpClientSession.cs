@@ -128,7 +128,7 @@ namespace ProjectServer
                     try
                     {
                         string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                        string logMessage = $"[{timestamp}] Connection closed  - Client: {GetClientIP}\n";
+                        string logMessage = $"[{timestamp}] Connection closed  - Client: {_ClientNick}\n";
                         File.AppendAllText("D:\\Visual Studio\\ProjectServer\\ProjectServer\\LogFile.txt", logMessage);
                     }
                     catch (Exception ex)

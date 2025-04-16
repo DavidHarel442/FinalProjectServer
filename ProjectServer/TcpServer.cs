@@ -59,16 +59,7 @@ namespace ProjectServer
                     Sessions.Add(userSession.GetClientIP, userSession);
 
 
-                    try
-                    {
-                        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                        string logMessage = $"[{timestamp}] New connection created - Client: {userSession.GetClientIP}\n";
-                        File.AppendAllText("D:\\Visual Studio\\ProjectServer\\ProjectServer\\LogFile.txt", logMessage);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error writing to log file: {ex.Message}");
-                    }
+
                 }
             }
         }

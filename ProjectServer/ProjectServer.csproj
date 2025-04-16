@@ -66,7 +66,6 @@
     <Compile Include="AESEncryption.cs" />
     <Compile Include="CaptchaGenerator.cs" />
     <Compile Include="DrawingAction.cs" />
-    <Compile Include="DrawingMetadata.cs" />
     <Compile Include="EncryptionManager.cs" />
     <Compile Include="MailSender.cs" />
     <Compile Include="LoginAndRegister.cs" />

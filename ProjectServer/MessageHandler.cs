@@ -69,7 +69,6 @@ namespace ProjectServer
                     break;
                 case "RequestFullDrawingState":
                     clientSession.openedDrawing = true;
-                    Console.WriteLine("goes in if");
                     ServerManager.tcpServer.DrawingManager.RequestedFullDrawingState(clientSession);
                     break;
                 case "SendFullDrawingState":
@@ -304,6 +303,16 @@ namespace ProjectServer
                         else
                         {
                         clientSession._ClientNick = decodedUsername;
+                        try
+                        {
+                            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                            string logMessage = $"[{timestamp}] New connection created - Client: {clientSession._ClientNick}\n";
+                            File.AppendAllText("D:\\Visual Studio\\ProjectServer\\ProjectServer\\LogFile.txt", logMessage);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error writing to log file: {ex.Message}");
+                        }
                         clientSession.isInitialConnectionComplete = true;
                             clientSession.SendMessage("UsernameAccepted", "UsernameAccepted");
                         }
