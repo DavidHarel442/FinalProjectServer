@@ -8,16 +8,35 @@ using System.Threading.Tasks;
 
 namespace ProjectServer
 {
+    /// <summary>
+    /// Manages saving, loading, and managing drawing files for users.
+    /// Provides functionality to store drawing images in a file system organized by username.
+    /// </summary>
     public class SaveDrawings
     {
+        /// <summary>
+        /// The base directory path where all user drawings are stored
+        /// </summary>
         private readonly string _baseSavePath;
 
+        /// <summary>
+        /// Initializes a new instance of the SaveDrawings class.
+        /// Creates the base directory if it doesn't exist.
+        /// </summary>
+        /// <param name="baseSavePath">
+        /// The base directory path to store all user drawings.
+        /// Defaults to "UserDrawings" in the application directory.
+        /// </param>
         public SaveDrawings(string baseSavePath = "UserDrawings")
         {
             _baseSavePath = baseSavePath;
             EnsureBaseDirectoryExists();
         }
 
+        /// <summary>
+        /// Ensures that the base directory for storing drawings exists.
+        /// Creates the directory if it doesn't exist.
+        /// </summary>
         private void EnsureBaseDirectoryExists()
         {
             if (!Directory.Exists(_baseSavePath))
@@ -26,6 +45,12 @@ namespace ProjectServer
             }
         }
 
+        /// <summary>
+        /// Gets or creates the user-specific directory for storing drawings.
+        /// Each user has their own subdirectory under the base path.
+        /// </summary>
+        /// <param name="username">The username of the user</param>
+        /// <returns>The full path to the user's drawing directory</returns>
         private string GetUserDirectory(string username)
         {
             string userDir = Path.Combine(_baseSavePath, username);
@@ -43,7 +68,11 @@ namespace ProjectServer
         /// <param name="username">Username who owns the drawing</param>
         /// <param name="drawingName">Name of the drawing</param>
         /// <param name="imageData">Base64 encoded image data</param>
-        /// <returns>True if saved successfully</returns>
+        /// <returns>True if saved successfully, false if an error occurred</returns>
+        /// <remarks>
+        /// The drawing is saved as a PNG file named after the drawingName parameter.
+        /// The file is stored in the user's directory under the base save path.
+        /// </remarks>
         public bool SaveDrawing(string username, string drawingName, string imageData)
         {
             try
@@ -76,11 +105,16 @@ namespace ProjectServer
         }
 
         /// <summary>
-        /// Loads a drawing for a specific user
+        /// Loads a drawing for a specific user.
+        /// Retrieves the image file and converts it to Base64 string representation.
         /// </summary>
         /// <param name="username">Username who owns the drawing</param>
         /// <param name="drawingName">Name of the drawing to load</param>
-        /// <returns>Base64 encoded image data or null if not found</returns>
+        /// <returns>Base64 encoded image data or null if not found or an error occurred</returns>
+        /// <remarks>
+        /// The method looks for a PNG file with the specified drawing name
+        /// in the user's directory under the base save path.
+        /// </remarks>
         public string LoadDrawing(string username, string drawingName)
         {
             try
@@ -108,10 +142,15 @@ namespace ProjectServer
         }
 
         /// <summary>
-        /// Gets a list of all drawings for a user
+        /// Gets a list of all drawings for a user.
+        /// Lists all PNG files in the user's directory.
         /// </summary>
         /// <param name="username">Username to get drawings for</param>
-        /// <returns>List of drawing names</returns>
+        /// <returns>List of drawing names without file extensions</returns>
+        /// <remarks>
+        /// The method returns the file names without the .png extension.
+        /// Returns an empty list if the user has no drawings or if an error occurs.
+        /// </remarks>
         public List<string> GetUserDrawings(string username)
         {
             List<string> drawings = new List<string>();
@@ -137,11 +176,16 @@ namespace ProjectServer
         }
 
         /// <summary>
-        /// Deletes a drawing
+        /// Deletes a drawing for a specific user.
+        /// Removes the drawing file from the user's directory.
         /// </summary>
         /// <param name="username">Username who owns the drawing</param>
         /// <param name="drawingName">Name of the drawing to delete</param>
-        /// <returns>True if deleted successfully</returns>
+        /// <returns>True if deleted successfully, false if the drawing doesn't exist or an error occurred</returns>
+        /// <remarks>
+        /// The method looks for a PNG file with the specified drawing name
+        /// in the user's directory under the base save path and deletes it if found.
+        /// </remarks>
         public bool DeleteDrawing(string username, string drawingName)
         {
             try
@@ -170,4 +214,3 @@ namespace ProjectServer
         }
     }
 }
-

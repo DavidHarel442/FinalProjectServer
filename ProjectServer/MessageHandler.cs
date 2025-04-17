@@ -2,9 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Drawing.Imaging;
+
 using System.IO;
 using System.Linq;
 using System.Media;
@@ -25,7 +23,13 @@ namespace ProjectServer
         /// property to help managing the messages, specifically to send feedbacks and updates
         /// </summary>
         private TcpClientSession clientSession;
-
+        /// <summary>
+        /// this property is incharge of the object capable of generating the captcha for lign
+        /// </summary>
+        private CaptchaGenerator captchaGenerator;
+        /// <summary>
+        /// property to save drawings
+        /// </summary>
         private SaveDrawings saveDrawings;
 
         public MessageHandler(TcpClientSession session)
@@ -178,10 +182,7 @@ namespace ProjectServer
                     break;
             }
         }
-        /// <summary>
-        /// this property is incharge of the object capable of generating the captcha for lign
-        /// </summary>
-        private CaptchaGenerator captchaGenerator;
+
         /// <summary>
         /// this function will send code to mail for two step authentication and captcha for triple one. and verifies them 
         /// </summary>
